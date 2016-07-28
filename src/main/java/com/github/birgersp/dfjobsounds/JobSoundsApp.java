@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketException;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
@@ -16,6 +17,10 @@ import java.security.CodeSource;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import javax.sound.sampled.AudioInputStream;
@@ -26,6 +31,7 @@ public class JobSoundsApp extends Thread {
 
     private static final String APP_NAME = "JobSounds - Dwarf Fortress sound utility";
     private static final String SCRIPT_NAME = "jobsounds";
+    private static final int SERVER_TIMEOUT = 500;
 
     private static Clip[] getClips(SoundType type) throws Exception {
 
@@ -56,6 +62,10 @@ public class JobSoundsApp extends Thread {
         return clips.toArray(new Clip[clips.size()]);
     }
 
+    private static void handleException(Exception e) {
+        System.err.println("Error: " + e.getMessage());
+    }
+
     public static void main(String[] args) {
 
         try {
@@ -65,22 +75,23 @@ public class JobSoundsApp extends Thread {
             JobSoundsApp ls = new JobSoundsApp(dfDir);
             ls.installScript();
             ls.start();
-            ls.runScript();
             ls.join();
         } catch (Exception e) {
-            System.err.println("Error: " + e.getMessage());
+            handleException(e);
         }
     }
 
     private final String dfDir;
     private final HashMap<Integer, Long> dwarfSoundClocks;
     private boolean running;
+    private ServerSocket server;
     private Socket socket;
     private final HashMap<SoundType, Clip[]> soundClips;
 
     public JobSoundsApp(String dfDir) throws Exception {
 
         this.dfDir = dfDir;
+        server = new ServerSocket(56730);
         dwarfSoundClocks = new HashMap<>();
         soundClips = new HashMap<>();
         for (SoundType soundType : SoundType.values()) {
@@ -140,9 +151,25 @@ public class JobSoundsApp extends Thread {
         int index = 0;
         byte buffer[] = new byte[64];
         try {
-            ServerSocket server = new ServerSocket(56730);
             while (running) {
                 try {
+                    Thread runScriptThread = new Thread() {
+                        @Override
+                        public void run() {
+                            try {
+                                System.out.println("Running DFHack script");
+                                while (socket == null) {
+                                    runScript();
+                                    Thread.sleep(SERVER_TIMEOUT);
+                                }
+                            } catch (Exception ex) {
+                                handleException(ex);
+                            }
+                        }
+                    };
+
+                    socket = null;
+                    runScriptThread.start();
                     System.out.println("Connecting to DFHack...");
                     socket = server.accept();
                     System.out.println("Connected");
@@ -157,9 +184,9 @@ public class JobSoundsApp extends Thread {
                             index++;
                         }
                     }
-                } catch (EOFException e) {
-                    System.out.println("Connection lost");
+                } catch (SocketException | EOFException e) {
                 } finally {
+                    System.out.println("Connection lost");
                     socket.close();
                 }
             }
@@ -172,7 +199,6 @@ public class JobSoundsApp extends Thread {
     private void runScript() throws Exception {
 
         String cmd = dfDir + File.separator + "dfhack-run " + SCRIPT_NAME;
-        System.out.println("Executing: " + cmd);
         Process p = Runtime.getRuntime().exec(cmd);
         p.waitFor();
     }
@@ -191,7 +217,7 @@ public class JobSoundsApp extends Thread {
             }
             return null;
         }
-        
+
         private final int[] ids;
         private final int minDelay;
 
