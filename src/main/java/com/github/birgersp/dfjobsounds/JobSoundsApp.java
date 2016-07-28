@@ -181,8 +181,19 @@ public class JobSoundsApp extends Thread {
 
         DIG(600, 3, 8), BUILD(900, 68), CHOP(1000, 9);
 
-        private final int minDelay;
+        public static SoundType fromId(int id) {
+            for (SoundType type : values()) {
+                for (int typeId : type.ids) {
+                    if (id == typeId) {
+                        return type;
+                    }
+                }
+            }
+            return null;
+        }
+        
         private final int[] ids;
+        private final int minDelay;
 
         private SoundType(int minDelay, int... ids) {
 
@@ -194,15 +205,5 @@ public class JobSoundsApp extends Thread {
             return minDelay;
         }
 
-        public static SoundType fromId(int id) {
-            for (SoundType type : values()) {
-                for (int typeId : type.ids) {
-                    if (id == typeId) {
-                        return type;
-                    }
-                }
-            }
-            return null;
-        }
     }
 }

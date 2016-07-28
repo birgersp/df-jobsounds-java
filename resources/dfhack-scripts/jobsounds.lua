@@ -1,14 +1,3 @@
--- Adds job sounds.
---@ module = true
-
---[====[
-
-Job sounds
-===========
-Connects to a socket (tcp), checks the current job of dwarves and sends messages
-
-]====]
-
 local scriptName = 'jobsounds'
 local jobs = {
 	'Dig',
