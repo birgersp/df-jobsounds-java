@@ -1,0 +1,4 @@
+[submodule "soundsrepo"]
+	path = soundsrepo
+	url = git@github.com:birgersp/df-jobsounds-bin.git
+	branch = master
