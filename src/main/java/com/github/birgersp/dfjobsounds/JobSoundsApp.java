@@ -108,8 +108,10 @@ public class JobSoundsApp extends Thread {
         Clip[] clips = soundClips.get(soundType);
         int index = (int) (Math.random() * clips.length);
         Clip clip = clips[index];
-        clip.setFramePosition(0);
-        clip.start();
+        if (!clip.isRunning()) {
+            clip.setFramePosition(0);
+            clip.start();
+        }
     }
 
     private void installScript() throws Exception {
