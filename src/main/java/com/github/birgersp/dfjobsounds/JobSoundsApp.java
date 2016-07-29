@@ -98,7 +98,7 @@ public class JobSoundsApp extends Thread {
     private void handleLine(String line) {
 
         String split[] = line.split(" ");
-        if (split.length != 2) {
+        if (split.length != 3) {
             return;
         }
         int dwarfId = Integer.parseInt(split[0]);

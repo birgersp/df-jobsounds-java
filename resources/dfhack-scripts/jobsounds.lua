@@ -1,3 +1,7 @@
+window_width = 105
+window_height = 55
+local factor = 9
+
 local scriptName = 'jobsounds'
 local jobs = {
 	'Dig',
@@ -5,6 +9,10 @@ local jobs = {
 	'ConstructBuilding',
 	'FellTree'
 }
+
+function round(num)
+  return math.floor(num + 0.5)
+end
 
 local function initSocket()
 	socket = tcp:connect('127.0.0.1', 56730)
@@ -35,15 +43,14 @@ local function send(msg)
 end
 
 local function triggerJobSound(unit, jobType)
-	if (socket ~= nil) then
-		if (
-		    df.global.window_z == unit.pos.z and
-			df.global.window_x < unit.pos.x and 
-			df.global.window_x+90 > unit.pos.x and
-			df.global.window_y < unit.pos.y and 
-			df.global.window_y+60 > unit.pos.y
-		) then
-			send(unit.id .. " " .. jobType .. "\n")
+	if (
+	    df.global.window_z == unit.pos.z
+	) then
+		local ux = (unit.pos.x - window_center_x) / (window_width / 2)
+		local uy = (unit.pos.y - window_center_y) / (window_height / 2)
+		local d = round(math.sqrt(ux*ux + uy*uy) * factor)
+		if (d <= factor) then
+			send(unit.id .. " " .. jobType .. " " .. d .. "\n")
 		end
 	end
 end
@@ -90,6 +97,10 @@ function loop()
 	end
 
 	if (df.global.pause_state == false) then
+		local window_x = df.global.window_x
+		local window_y = df.global.window_y
+		window_center_x = window_x + round(window_width / 2)
+		window_center_y = window_y + round(window_height / 2)
 		checkDwarves()
 	end
 
