@@ -1,8 +1,8 @@
-# [LabourSounds](https://github.com/birgersp/df-jobsounds)
+# [JobSounds](https://github.com/birgersp/df-jobsounds)
 
 A Dwarf Fortress sound utility. [Download here](https://github.com/birgersp/df-jobsounds/releases).
 
-This application reads the current action and position of your dwarves, and plays sounds accordingly. Checkout version 0.2 [demo](https://youtu.be/qeYIK1y-UcQ).
+This application reads the current action and position of your dwarves, and plays sounds accordingly. Checkout version 0.3 [demo](https://youtu.be/EpGBG0oPhmQ).
 
 Requires [DFHack](http://www.bay12forums.com/smf/index.php?topic=139553) and Java.
 
