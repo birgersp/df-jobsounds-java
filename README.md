@@ -1,4 +1,4 @@
-# [LabourSounds](https://github.com/birgersp/df-jobsounds)
+# [JobSounds](https://github.com/birgersp/df-jobsounds)
 
 A Dwarf Fortress sound utility. [Download here](https://github.com/birgersp/df-jobsounds/releases).
 
