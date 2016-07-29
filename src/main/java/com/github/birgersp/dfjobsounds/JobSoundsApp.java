@@ -1,6 +1,5 @@
 package com.github.birgersp.dfjobsounds;
 
-import java.io.BufferedInputStream;
 import java.io.DataInputStream;
 import java.io.EOFException;
 import java.io.File;
@@ -19,9 +18,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
-import javax.sound.sampled.AudioInputStream;
-import javax.sound.sampled.AudioSystem;
-import javax.sound.sampled.Clip;
+import javax.sound.sampled.LineUnavailableException;
 
 public class JobSoundsApp extends Thread {
 
@@ -29,7 +26,26 @@ public class JobSoundsApp extends Thread {
     private static final String SCRIPT_NAME = "jobsounds";
     private static final int SERVER_TIMEOUT = 500;
 
-    private static Clip[] getClips(SoundType type) throws Exception {
+    private static byte[] getResourceAsBytes(String name, int bufferSize) throws IOException {
+        InputStream stream = JobSoundsApp.class.getResourceAsStream(name);
+        byte buffer[] = new byte[bufferSize];
+        int b, i = 0;
+        while ((b = stream.read()) != -1) {
+            try {
+                buffer[i++] = (byte) b;
+            } catch (IndexOutOfBoundsException e) {
+                throw new IOException("Buffer of " + bufferSize + " bytes is too small to read resource \"" + name + "\"");
+            }
+        }
+        byte data[] = new byte[i + 1];
+        while (i >= 0) {
+            data[i] = buffer[i];
+            i--;
+        }
+        return data;
+    }
+
+    private static Sound[] getSounds(SoundType type) throws Exception {
 
         CodeSource src = JobSoundsApp.class.getProtectionDomain().getCodeSource();
         List<String> fileNames = new ArrayList<>();
@@ -42,20 +58,18 @@ public class JobSoundsApp extends Thread {
             while ((ze = zip.getNextEntry()) != null) {
                 String entryName = ze.getName();
                 if (entryName.startsWith("sounds/" + type.toString().toLowerCase()) && entryName.endsWith(".wav")) {
-                    fileNames.add(entryName);
+                    fileNames.add("/" + entryName);
                 }
             }
         }
 
-        ArrayList<Clip> clips = new ArrayList<>();
+        ArrayList<Sound> clips = new ArrayList<>();
         for (String fileName : fileNames) {
-            InputStream stream = JobSoundsApp.class.getResourceAsStream("/" + fileName);
-            AudioInputStream audioStream = AudioSystem.getAudioInputStream(new BufferedInputStream(stream));
-            clips.add(AudioSystem.getClip());
-            clips.get(clips.size() - 1).open(audioStream);
+            byte[] data = getResourceAsBytes(fileName, 1000 * 1000);
+            clips.add(new Sound(data));
             System.out.println("Added " + type + " sound: " + fileName);
         }
-        return clips.toArray(new Clip[clips.size()]);
+        return clips.toArray(new Sound[clips.size()]);
     }
 
     private static void handleException(Exception e) {
@@ -82,7 +96,7 @@ public class JobSoundsApp extends Thread {
     private boolean running;
     private final ServerSocket server;
     private Socket socket;
-    private final HashMap<SoundType, Clip[]> soundClips;
+    private final HashMap<SoundType, Sound[]> soundClips;
 
     public JobSoundsApp(String dfDir) throws Exception {
 
@@ -91,7 +105,7 @@ public class JobSoundsApp extends Thread {
         dwarfSoundClocks = new HashMap<>();
         soundClips = new HashMap<>();
         for (SoundType soundType : SoundType.values()) {
-            soundClips.put(soundType, getClips(soundType));
+            soundClips.put(soundType, getSounds(soundType));
         }
     }
 
@@ -103,6 +117,7 @@ public class JobSoundsApp extends Thread {
         }
         int dwarfId = Integer.parseInt(split[0]);
         int labourType = Integer.parseInt(split[1]);
+        int volumeFactor = Integer.parseInt(split[2])*-2;
 
         SoundType soundType = SoundType.fromId(labourType);
         long currentTime = System.currentTimeMillis();
@@ -112,12 +127,13 @@ public class JobSoundsApp extends Thread {
             }
         }
         dwarfSoundClocks.put(dwarfId, currentTime);
-        Clip[] clips = soundClips.get(soundType);
+        Sound[] clips = soundClips.get(soundType);
         int index = (int) (Math.random() * clips.length);
-        Clip clip = clips[index];
-        if (!clip.isRunning()) {
-            clip.setFramePosition(0);
-            clip.start();
+        Sound clip = clips[index];
+        try {
+            clip.play(volumeFactor);
+        } catch (LineUnavailableException ex) {
+            handleException(ex);
         }
     }
 
