@@ -17,10 +17,6 @@ import java.security.CodeSource;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import javax.sound.sampled.AudioInputStream;
@@ -84,7 +80,7 @@ public class JobSoundsApp extends Thread {
     private final String dfDir;
     private final HashMap<Integer, Long> dwarfSoundClocks;
     private boolean running;
-    private ServerSocket server;
+    private final ServerSocket server;
     private Socket socket;
     private final HashMap<SoundType, Clip[]> soundClips;
 
@@ -160,7 +156,7 @@ public class JobSoundsApp extends Thread {
                                 System.out.println("Running DFHack script");
                                 while (socket == null) {
                                     runScript();
-                                    Thread.sleep(SERVER_TIMEOUT);
+                                    sleep(SERVER_TIMEOUT);
                                 }
                             } catch (Exception ex) {
                                 handleException(ex);
@@ -191,7 +187,7 @@ public class JobSoundsApp extends Thread {
                 }
             }
         } catch (IOException ex) {
-            ex.printStackTrace();
+            handleException(ex);
         }
         running = false;
     }
