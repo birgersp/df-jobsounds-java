@@ -1,5 +1,6 @@
-window_width = 105
-window_height = 55
+window_width = 100
+window_height = 50
+guidm = require("gui.dwarfmode")
 local factor = 9
 
 local scriptName = 'jobsounds'
@@ -28,6 +29,7 @@ local function start()
 		dfhack.println(scriptName.." connected")	
 		stop = false
 		timeLastSend = os.time()
+		loopSlow()
 		loop()
 	else
 		dfhack.println(scriptName.." could not connect")
@@ -105,6 +107,18 @@ function loop()
 	end
 
 	dfhack.timeout(15, 'ticks', loop)
+end
+
+function loopSlow()
+	if (stop == true) then
+		return
+	end
+	
+	local map = guidm.getPanelLayout().map
+	window_width = map.width
+	window_height = map.height
+	
+	dfhack.timeout(200, 'ticks', loopSlow)
 end
 
 start()
